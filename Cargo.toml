@@ -1,0 +1,19 @@
+[package]
+name = "dwebpa"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "An utility that converts all the files in the working directory from .webp to .png. Requires dwebp -command to work (package webp in Ubuntu)."
+
+[lib]
+path = "src/lib.rs"
+
+# We can only have one library in a project, but multiple binaries!
+# [[ ]] means an array in TOML syntax
+[[bin]]
+path = "src/main.rs"
+name = "dwebpa"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
