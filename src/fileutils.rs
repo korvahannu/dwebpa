@@ -17,7 +17,7 @@ pub fn convert_webd_files_to_png(files : Vec<String>, option: String) {
         if option.len() > 0 {
             command = format!("dwebp {} {} -o {}", option, files[i], files[i].replace(".webp", ".png"));
         } else {
-            command = format!("dwebp {} -o {}", files[i], files[i].replace(".webp", ".png"));
+            command = format!("dwebp {} -o {}", files[i], files[i].replace(".webp", format!("{}", option.replace("-", " ")).as_str()));
         }
         Command::new("sh")
             .arg("-c")
