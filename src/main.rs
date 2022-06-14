@@ -1,4 +1,5 @@
-use dwebpa::fileutils::{get_webp_files, convert_webp_files, delete_files, ConversionResult};
+use dwebpa::fileutils::{get_webp_files, delete_files};
+use dwebpa::converter::{convert_webp_files, ConversionResult};
 use std::io::stdin;
 use std::env;
 
