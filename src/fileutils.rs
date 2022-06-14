@@ -9,11 +9,16 @@ use std::{process::Command};
 /// convert_webd_files_to_png(files);
 ///
 /// ```
-pub fn convert_webd_files_to_png(files : Vec<String>) {
+pub fn convert_webd_files_to_png(files : Vec<String>, option: String) {
     let mut i : usize = 0;
     while i < files.len() {
         println!("Converting file: {}", files[i]);
-        let command : String = format!("dwebp {} -o {}", files[i], files[i].replace(".webp", ".png"));
+        let mut command : String = String::new();
+        if option.len() > 0 {
+            command = format!("dwebp {} {} -o {}", option, files[i], files[i].replace(".webp", ".png"));
+        } else {
+            command = format!("dwebp {} -o {}", files[i], files[i].replace(".webp", ".png"));
+        }
         Command::new("sh")
             .arg("-c")
             .arg(command.as_str())
