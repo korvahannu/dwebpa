@@ -1,7 +1,9 @@
-use crate::fileutils::{if_file_exists, run_command};
+use crate::fileutils::{if_file_exists, run_command, get_filename};
+use std::path::PathBuf;
+use crate::config::{self, Config};
 pub struct ConversionResult {
-    pub success: Vec<String>,
-    pub fail: Vec<String>,
+    pub success: Vec<PathBuf>,
+    pub fail: Vec<PathBuf>,
 }
 
 impl ConversionResult {
@@ -22,39 +24,22 @@ impl ConversionResult {
 /// convert_webd_files_to_png(files);
 ///
 /// ```
-pub fn convert_webp_files(files: &Vec<String>, option: String) -> ConversionResult {
+pub fn convert_webp_files(files: &Vec<PathBuf>, config: Config) -> ConversionResult {
     let mut result: ConversionResult = ConversionResult::new();
     for file in files {
-        println!("Converting file: {}", file);
+        println!("Converting file: {}", file.display());
         let command: String;
-        let newfile: String;
-        if option.len() == 0 {
-            newfile = file.replace(".webp", ".png");
-            println!("Generating new file: {}", newfile);
-            command = format!("dwebp {} {} -o {}", option, file, newfile);
-            if if_file_exists(&newfile) {
-                result.fail.push(newfile)
-            } else {
-                run_command(&command);
-                if if_file_exists(&newfile) {
-                    result.success.push(newfile)
-                } else {
-                    result.fail.push(newfile)
-                }
-            }
+        let newfile: String = get_filename(file).replace(".webp", format!(".{}", config.image_format.to_string()).as_str());
+        println!("Generating new file: {}", newfile);
+        command = format!("dwebp {} -o {}", file.display(), newfile);
+        if if_file_exists(&newfile, String::from(".")) {
+            result.fail.push(file.clone());
         } else {
-            newfile = file.replace(".webp", format!(".{}", option.replace("-", "")).as_str());
-            println!("Generating new file: {}", newfile);
-            command = format!("dwebp {} -o {}", file, newfile);
-            if if_file_exists(&newfile) {
-                result.fail.push(newfile);
+            run_command(&command);
+            if if_file_exists(&newfile, String::from(".")) {
+                result.success.push(file.clone())
             } else {
-                run_command(&command);
-                if if_file_exists(&newfile) {
-                    result.success.push(newfile)
-                } else {
-                    result.fail.push(newfile)
-                }
+                result.fail.push(file.clone())
             }
         }
     }
