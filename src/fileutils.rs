@@ -1,48 +1,32 @@
 use std::path::PathBuf;
-use std::{fs, io};
 use std::process::Command;
+use std::{fs, io};
+use walkdir::WalkDir;
 
 /// Takes files as arguments presented as a vector of strings deletes them.
 ///
 /// # Examples
 ///
 /// ```
-/// let files : Vec<String> = ["file1.webp", "file2.webp"];
-/// delete_files(files);
+/// let files : Vec<PathBuf> = vec![PathBuf::new("./example1.png"), PathBuf::new("./example2.png")];
+/// delete_files(&files);
 ///
 /// ```
 pub fn delete_files(files: &Vec<PathBuf>) {
     for file in files {
-        fs::remove_file(file)
-            .unwrap();
-    }
-}
-
-/// Takes a filename (string) as a parameter.
-/// Checks if that file exists in the current working.
-/// Returns bool. True if it exists, false if not.
-///
-/// # Examples
-///
-/// ```
-/// let result : bool = if_file_exists("hello.jpg");
-///
-/// ```
-pub fn if_file_exists(file: &String, path: String) -> bool {
-    let all_files = get_non_webp_files(path);
-
-    let mut i: usize = 0;
-    while i < all_files.len() {
-        if get_filename(&all_files[i]).eq(file) {
-            return true
+        match fs::remove_file(file) {
+            Ok(_) => {
+                continue;
+            },
+            Err(error) => {
+                println!("Failed to remove file {}", file.display());
+                println!("{}", error);
+            }
         }
-        i += 1;
     }
-
-    false
 }
 
-/// Runs a shell command in the current working directory.
+/// Runs a shell command in the specified path
 ///
 /// # Examples
 ///
@@ -58,20 +42,26 @@ pub fn run_command(command: &String) {
         .expect(format!("failed to execute command: {}", command).as_str());
 }
 
-/// Gets a list of .webp files from the current working directory and returns them as Vec<String>
+/// Gets a list of .webp files from the current working directory and returns them as Vec<PathBuf>
+/// Second parameter (bool) is a switch. False means get from the given path only. True means
+/// get the files recursively.
 ///
 /// # Examples
 ///
 /// ```
-/// let web_files: Vec<String> = get_webp_files();
+/// let web_files: Vec<PathBuf> = get_webp_files("/home/example", false);
 ///
 /// ```
-pub fn get_webp_files(path: String) -> Vec<PathBuf> {
-    let mut all_files: Vec<PathBuf> = get_all_files(path);
-    println!("All files: {:?}", all_files);
+pub fn get_webp_files(path: &String, recursive: bool) -> Vec<PathBuf> {
+    let mut all_files: Vec<PathBuf>;
+    if recursive {
+        all_files = get_all_files_recursive(path)
+    } else {
+        all_files = get_all_files(path);
+    }
     let mut i: usize = 0;
     while i < all_files.len() {
-        if !get_filename(&all_files[i]).ends_with(".webp") {
+        if !all_files[i].display().to_string().ends_with(".webp") {
             all_files.remove(i);
         } else {
             i += 1;
@@ -80,7 +70,18 @@ pub fn get_webp_files(path: String) -> Vec<PathBuf> {
     all_files
 }
 
-/// Gets a list of non-.webp files from the current working directory and returns them as Vec<String>
+pub fn get_all_files_recursive(path: &String) -> Vec<PathBuf> {
+    let scan: WalkDir = WalkDir::new(path);
+    let mut result: Vec<PathBuf> = Vec::new();
+    for file in scan {
+        result.push(PathBuf::from(file.unwrap().path()));
+    }
+
+    result
+}
+
+/// Gets a list of non-.webp files from the specified directory and returns them as Vec<PathBuf>
+/// Takes in parameter path: &String
 ///
 /// # Examples
 ///
@@ -88,11 +89,11 @@ pub fn get_webp_files(path: String) -> Vec<PathBuf> {
 /// let non_web_files: Vec<String> = get_non_webp_files();
 ///
 /// ```
-pub fn get_non_webp_files(path: String) -> Vec<PathBuf> {
+pub fn get_non_webp_files(path: &String) -> Vec<PathBuf> {
     let mut all_files: Vec<PathBuf> = get_all_files(path);
     let mut i: usize = 0;
     while i < all_files.len() {
-        if get_filename(&all_files[i]).ends_with(".webp") {
+        if all_files[i].display().to_string().ends_with(".webp") {
             all_files.remove(i);
         } else {
             i += 1;
@@ -101,7 +102,8 @@ pub fn get_non_webp_files(path: String) -> Vec<PathBuf> {
     all_files
 }
 
-/// Gets a list of files from the current working directory and returns them as Vec<PathBuf>
+/// Gets a list of files from the specified directory and returns them as Vec<PathBuf>
+/// Takes in parameter path: &String
 ///
 /// # Examples
 ///
@@ -109,7 +111,7 @@ pub fn get_non_webp_files(path: String) -> Vec<PathBuf> {
 /// let all_files: Vec<PathBuf> = get_all_files();
 ///
 /// ```
-pub fn get_all_files(path: String) -> Vec<PathBuf> {
+pub fn get_all_files(path: &String) -> Vec<PathBuf> {
     let mut entries = fs::read_dir(path)
         .unwrap()
         .map(|res| res.map(|e| e.path()))
@@ -121,11 +123,12 @@ pub fn get_all_files(path: String) -> Vec<PathBuf> {
 }
 
 /// Gets a list of directories from the specified path and returns them as Vec<PathBuf>
+/// Takes in parameter path: &String
 ///
 /// # Examples
 ///
 /// ```
-/// let all_directories: Vec<PathBuf> = get_all_directories();
+/// let all_directories: Vec<PathBuf> = get_all_directories("/home/example");
 ///
 /// ```
 pub fn get_all_directories(path: String) -> Vec<PathBuf> {
@@ -137,8 +140,4 @@ pub fn get_all_directories(path: String) -> Vec<PathBuf> {
         .unwrap();
     entries.sort();
     entries
-}
-
-pub fn get_filename(file: &PathBuf) -> String {
-    String::from(file.file_name().unwrap().to_str().unwrap())
 }
